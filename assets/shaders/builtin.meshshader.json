@@ -1,0 +1,74 @@
+{
+    "name": "builtin.meshshader",
+    "render_pass": "builtin.render_pass.world",
+    "stages": [
+        {
+            "stage_type": "vertex",
+            "stage_file": "shaders/builtin.meshshader.vert.spv"
+        },
+        {
+            "stage_type": "fragment",
+            "stage_file": "shaders/builtin.meshshader.frag.spv"
+        }
+    ],
+
+    "attributes": [
+        {
+            "attribute_type": "vec3",
+            "name": "in_position"
+        },
+        {
+            "attribute_type": "vec2",
+            "name": "in_tex_coord"
+        },
+        {
+            "attribute_type": "vec3",
+            "name": "in_normal"
+        }
+    ],
+
+    "descriptor_sets": [
+        {
+            "set_binding": 0,
+            "max_set_allocations": 1,
+            "descriptors": [
+                {
+                    "descriptor_type": "uniform_buffer",
+                    "buffer_fields": [
+                        {
+                            "field_type": "mat4",
+                            "name": "projection"
+                        },
+                        {
+                            "field_type": "mat4",
+                            "name": "view"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "set_binding": 1,
+            "max_set_allocations": 1000,
+            "descriptors": [
+                {
+                    "descriptor_type": "uniform_buffer",
+                    "buffer_fields": [
+                        {
+                            "field_type": "vec4",
+                            "name": "diffuse_color"
+                        }
+                    ]
+                },
+                {
+                    "descriptor_type": "sampler",
+                    "name": "diffuse_texture"
+                }
+            ]
+        }
+    ],
+
+    "push_constants": [
+        { "push_constant_type": "mat4", "name": "model" }
+    ]
+}
