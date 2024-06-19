@@ -23,13 +23,16 @@ impl<'c> RenderPass<'c> {
         dependencies: &[vk::SubpassDependency],
     ) -> Self {
         let subpasses = subpasses.iter().map(|info| {
-            vk::SubpassDescription::default()
+            let mut description = vk::SubpassDescription::default()
                 .pipeline_bind_point(info.bind_point)
-                .input_attachments(info.input_attachments)
-                .resolve_attachments(info.resolve_attachments)
-                .color_attachments(info.color_attachments)
-                .depth_stencil_attachment(info.depth_stencil_attachments)
-                .preserve_attachments(info.preserve_attachments)
+                .input_attachments(info.input_attachments);
+
+            info.resolve_attachments.inspect(|&s| { description = description.resolve_attachments(s); });
+            info.color_attachments.inspect(|&s| { description = description.color_attachments(s); });
+            info.preserve_attachments.inspect(|&s| { description = description.preserve_attachments(s); });
+            info.depth_stencil_attachments.inspect(|&s| { description = description.depth_stencil_attachment(s); });
+
+            description
         })
         .collect::<Vec<_>>();
 
@@ -88,8 +91,8 @@ impl<'c> Drop for RenderPass<'c> {
 pub struct RenderPassSubPassInfo<'a> {
     pub bind_point: vk::PipelineBindPoint,
     pub input_attachments: &'a [vk::AttachmentReference],
-    pub color_attachments: &'a [vk::AttachmentReference],
-    pub resolve_attachments: &'a [vk::AttachmentReference],
-    pub depth_stencil_attachments: &'a vk::AttachmentReference,
-    pub preserve_attachments: &'a [u32],
+    pub color_attachments: Option<&'a [vk::AttachmentReference]>,
+    pub resolve_attachments: Option<&'a [vk::AttachmentReference]>,
+    pub depth_stencil_attachments: Option<&'a vk::AttachmentReference>,
+    pub preserve_attachments: Option<&'a [u32]>,
 }

@@ -1,5 +1,5 @@
 use ash::vk;
-use super::vkcontext::VkContext;
+use super::{command_buffer::CommandBuffer, vkcontext::VkContext};
 
 pub struct Pipeline<'c> {
     pub handle: vk::Pipeline,
@@ -127,6 +127,12 @@ impl<'c> Pipeline<'c> {
         vk::DynamicState::SCISSOR,
         vk::DynamicState::LINE_WIDTH,
     ];
+
+    pub fn bind(&self, command_buffer: &CommandBuffer, bind_point: vk::PipelineBindPoint) {
+        unsafe {
+            self.vkcontext.device.cmd_bind_pipeline(command_buffer.handle, bind_point, self.handle);
+        }
+    }
 }
 
 impl<'c> Drop for Pipeline<'c> {
@@ -156,7 +162,9 @@ impl<'a> PipelineStateInfo<'a> {
 
     pub fn get_default_pipeline_state_info() -> Self {
         Self {
-            viewport_state: vk::PipelineViewportStateCreateInfo::default(),
+            viewport_state: vk::PipelineViewportStateCreateInfo::default()
+                .viewport_count(1)
+                .scissor_count(1),
             input_assembly_state: vk::PipelineInputAssemblyStateCreateInfo::default()
                 .topology(vk::PrimitiveTopology::TRIANGLE_LIST)
                 .primitive_restart_enable(false),

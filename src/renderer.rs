@@ -17,24 +17,24 @@ use swapchain::Swapchain;
 use vkcontext::VkContext;
 use command_buffer::CommandBuffer;
 
-const MAX_FRAMES_IN_FLIGHT: u32 = 2;
+use crate::math::vec2::Vec2UI;
+
+pub const MAX_FRAMES_IN_FLIGHT: u32 = 2;
 
 pub struct Renderer<'a> {
-    command_buffers: ManuallyDrop<Vec<CommandBuffer<'a>>>,
+    pub command_buffers: ManuallyDrop<Vec<CommandBuffer<'a>>>,
 
-    current_image_index: u32,
-    current_frame: u32,
+    pub current_image_index: u32,
+    pub current_frame: u32,
 
-    sync_objects: Vec<SyncObject>,
-    command_pool: vk::CommandPool,
-    swapchain: Swapchain<'a>,
+    pub sync_objects: Vec<SyncObject>,
+    pub command_pool: vk::CommandPool,
+    pub swapchain: Swapchain<'a>,
     vkcontext: &'a VkContext,
 }
 
 impl<'a> Renderer<'a> {
     pub fn new(vkcontext: &'a VkContext) -> Self {
-        // Create context.
-
         let swapchain = Swapchain::new(&vkcontext, vkcontext.queue_family_indices, true);
 
         // Command pool.
@@ -89,7 +89,7 @@ impl<'a> Renderer<'a> {
 }
 
 impl<'a> Renderer<'a> {
-    pub fn begin_frame(&mut self) -> bool {
+    pub fn prepare_frame(&mut self) -> bool {
         let sync_object = self.next_sync_object();
 
         let wait_fences = [sync_object.in_flight_fence];
@@ -156,7 +156,7 @@ impl<'a> Renderer<'a> {
         false
     }
 
-    pub fn end_frame(&mut self) -> bool {
+    pub fn submit_frame(&mut self) -> bool {
         let sync_object = self.current_sync_object();
 
         let command_buffer = &self.command_buffers[self.current_frame as usize];
@@ -203,6 +203,10 @@ impl<'a> Renderer<'a> {
 
         false
     }
+
+    pub fn get_render_area_size(&self) -> Vec2UI {
+        Vec2UI::from_vk_extent_2d(self.swapchain.swapchain_properties.extent)
+    }
 }
 
 impl<'a> Renderer<'a> {
@@ -248,10 +252,10 @@ impl<'a> Drop for Renderer<'a> {
 }
 
 #[derive(Clone, Copy)]
-struct SyncObject {
-    image_available_semaphore: vk::Semaphore,
-    queue_complete_semaphore: vk::Semaphore,
-    in_flight_fence: vk::Fence,
+pub struct SyncObject {
+    pub image_available_semaphore: vk::Semaphore,
+    pub queue_complete_semaphore: vk::Semaphore,
+    pub in_flight_fence: vk::Fence,
 }
 
 impl SyncObject {

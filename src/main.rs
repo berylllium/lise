@@ -1,4 +1,7 @@
-use lise::renderer::{shader::Shader, vkcontext::VkContext, Renderer};
+use std::mem::size_of;
+
+use ash::vk::{self, AttachmentDescription, SubpassDependency};
+use lise::{math::vec2::Vec2UI, renderer::{self, render_pass::{RenderPass, RenderPassSubPassInfo}, shader::{Shader, ShaderDescriptorInfo, ShaderDescriptorSetInfo, ShaderDescriptorTypeInfo, ShaderPushConstantInfo, ShaderStageInfo, ShaderType, ShaderVertexAttributeInfo}, vkcontext::VkContext, Renderer}};
 use simple_logger::SimpleLogger;
 use simple_window::{Window, WindowEvent};
 
@@ -11,6 +14,120 @@ fn main() {
 
     let renderer = Renderer::new(&vkcontext);
 
+    let world_render_pass = RenderPass::new(
+        &vkcontext,
+        Vec2UI::default(),
+        renderer.get_render_area_size(),
+        &[
+            AttachmentDescription::default()
+                .format(renderer.swapchain.swapchain_properties.format.format)
+                .samples(vk::SampleCountFlags::TYPE_1)
+                .load_op(vk::AttachmentLoadOp::CLEAR)
+                .store_op(vk::AttachmentStoreOp::STORE)
+                .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
+                .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
+                .initial_layout(vk::ImageLayout::UNDEFINED)
+                .final_layout(vk::ImageLayout::PRESENT_SRC_KHR),
+        ],
+        &[
+            Some(vk::ClearValue { color: vk::ClearColorValue { float32: [0.4f32, 0.5f32, 0.6f32, 0f32] } }),
+        ],
+        &[
+            RenderPassSubPassInfo {
+                bind_point: vk::PipelineBindPoint::GRAPHICS,
+                input_attachments: &[],
+                color_attachments: Some(&[
+                    vk::AttachmentReference {
+                        attachment: 0,
+                        layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
+                    }
+                ]),
+                resolve_attachments: None,
+                depth_stencil_attachments: None,
+                preserve_attachments: None,
+            },
+        ],
+        &[
+            SubpassDependency {
+                src_subpass: vk::SUBPASS_EXTERNAL,
+                dst_subpass: 0,
+                src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+                dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+                src_access_mask: vk::AccessFlags::default(),
+                dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
+                dependency_flags: vk::DependencyFlags::default(),
+            }
+        ]
+    );
+
+    let mesh_shader = Shader::new(
+        &vkcontext,
+        "LiSE Test",
+        world_render_pass.handle,
+        0,
+        &[
+            vk::PipelineColorBlendAttachmentState {
+                blend_enable: vk::TRUE,
+                src_color_blend_factor: vk::BlendFactor::SRC_ALPHA,
+                dst_color_blend_factor: vk::BlendFactor::ONE_MINUS_SRC_ALPHA,
+                color_blend_op: vk::BlendOp::ADD,
+                src_alpha_blend_factor: vk::BlendFactor::SRC_ALPHA,
+                dst_alpha_blend_factor: vk::BlendFactor::ONE_MINUS_SRC_ALPHA,
+                alpha_blend_op: vk::BlendOp::ADD,
+                color_write_mask: vk::ColorComponentFlags::R | vk::ColorComponentFlags::G | vk::ColorComponentFlags::B
+                    | vk::ColorComponentFlags::A,
+            },
+        ],
+        &[ Vertex::get_binding_description(0) ],
+        &[
+            ShaderVertexAttributeInfo { attribute_type: ShaderType::Float32_3, binding: 0 },
+            ShaderVertexAttributeInfo { attribute_type: ShaderType::Float32_3, binding: 0 },
+            ShaderVertexAttributeInfo { attribute_type: ShaderType::Float32_2, binding: 0 },
+        ],
+        &[
+            ShaderPushConstantInfo { push_constant_type: ShaderType::Matrix4, stage_flags: vk::ShaderStageFlags::VERTEX },
+        ],
+        &[
+            ShaderDescriptorSetInfo {
+                max_set_allocations: 1 * renderer::MAX_FRAMES_IN_FLIGHT,
+                descriptors: &[
+                    ShaderDescriptorInfo {
+                        descriptor_type: ShaderDescriptorTypeInfo::UniformBuffer { 
+                            fields: &[ ShaderType::Matrix4, ShaderType::Matrix4 ],
+                        },
+                        stage_flags: vk::ShaderStageFlags::VERTEX,
+                    },
+                ]
+            },
+            ShaderDescriptorSetInfo {
+                max_set_allocations: 1000 * renderer::MAX_FRAMES_IN_FLIGHT,
+                descriptors: &[
+                    ShaderDescriptorInfo {
+                        descriptor_type: ShaderDescriptorTypeInfo::UniformBuffer { 
+                            fields: &[ ShaderType::Float32_4 ],
+                        },
+                        stage_flags: vk::ShaderStageFlags::FRAGMENT,
+                    },
+                    ShaderDescriptorInfo {
+                        descriptor_type: ShaderDescriptorTypeInfo::Sampler,
+                        stage_flags: vk::ShaderStageFlags::FRAGMENT,
+                    },
+                ],
+            },
+        ],
+        &[
+            ShaderStageInfo {
+                stage_type: vk::ShaderStageFlags::VERTEX,
+                stage_file: "shaders/builtin.meshshader.vert.spv",
+            },
+            ShaderStageInfo {
+                stage_type: vk::ShaderStageFlags::FRAGMENT,
+                stage_file: "shaders/builtin.meshshader.frag.spv",
+            },
+        ],
+        false,
+    );
+
     log::debug!("Entering game loop.");
     let mut is_running = true;
     while is_running {
@@ -20,5 +137,22 @@ fn main() {
                 _ => (),
             }
         });
+    }
+}
+
+#[derive(Clone, Copy)]
+#[repr(C)]
+struct Vertex {
+    pos: [f32; 3],
+    color: [f32; 3],
+    uv: [f32; 2],
+}
+
+impl Vertex {
+    fn get_binding_description(binding: u32) -> vk::VertexInputBindingDescription {
+        vk::VertexInputBindingDescription::default()
+            .binding(binding)
+            .stride(size_of::<Vertex>() as u32)
+            .input_rate(vk::VertexInputRate::VERTEX)
     }
 }

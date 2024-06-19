@@ -10,7 +10,6 @@ pub struct Shader<'c> {
     
     pub descriptor_pool: vk::DescriptorPool,
 
-    pub descriptor_sets: Vec<vk::DescriptorSet>,
     pub descriptor_set_layouts: Vec<vk::DescriptorSetLayout>,
 
     pub pipeline: Pipeline<'c>,
@@ -94,14 +93,6 @@ impl<'c> Shader<'c> {
             unsafe { vkcontext.device.create_descriptor_pool(&ci, None).unwrap() }
         };
 
-        let descriptor_sets = {
-            let allocate_info = vk::DescriptorSetAllocateInfo::default()
-                .descriptor_pool(descriptor_pool)
-                .set_layouts(&descriptor_set_layouts);
-
-            unsafe { vkcontext.device.allocate_descriptor_sets(&allocate_info).unwrap() }
-        };
-
         let mut push_constant_offset = 0u32;
         let push_constant_ranges = push_constants.iter().map(|push_constant| {
             let push_constant_range = vk::PushConstantRange::default()
@@ -134,7 +125,6 @@ impl<'c> Shader<'c> {
             name: name.to_string(),
             minimum_uniform_alignment: vkcontext.physical_device_properties.limits.min_uniform_buffer_offset_alignment,
             descriptor_pool,
-            descriptor_sets,
             descriptor_set_layouts,
             pipeline,
             vkcontext,
@@ -143,8 +133,8 @@ impl<'c> Shader<'c> {
 }
 
 impl<'c> Shader<'c> {
-    pub fn bind(&self, command_buffer: CommandBuffer) {
-
+    pub fn bind(&self, command_buffer: &CommandBuffer) {
+        self.pipeline.bind(command_buffer, vk::PipelineBindPoint::GRAPHICS);
     }
 }
 
@@ -225,10 +215,9 @@ pub struct ShaderPushConstantInfo {
     pub stage_flags: vk::ShaderStageFlags,
 }
 
-pub struct ShaderVertexAttributeInfo<'a> {
+pub struct ShaderVertexAttributeInfo {
     pub attribute_type: ShaderType,
     pub binding: u32,
-    pub name: &'a str,
 }
 
 pub struct ShaderDescriptorSetInfo<'a> {
@@ -242,7 +231,7 @@ pub struct ShaderDescriptorInfo<'a> {
 }
 
 pub enum ShaderDescriptorTypeInfo<'a> {
-    UniformBuffer { fields: &'a [ShaderBufferDescriptorInfo<'a>] },
+    UniformBuffer { fields: &'a [ShaderType] },
     Sampler
 }
 
@@ -253,11 +242,6 @@ impl<'a> ShaderDescriptorTypeInfo<'a> {
             Self::Sampler => vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
         }
     }
-}
-
-pub struct ShaderBufferDescriptorInfo<'a> {
-    field_tye: ShaderType,
-    name: &'a str,
 }
 
 pub enum ShaderType {
