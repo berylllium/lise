@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use ash::vk::{self, AttachmentDescription, SubpassDependency};
-use lise::{math::vec2::Vec2UI, renderer::{self, frame_buffer::Framebuffer, render_pass::{RenderPass, RenderPassSubPassInfo}, shader::{Shader, ShaderDescriptorInfo, ShaderDescriptorSetInfo, ShaderDescriptorTypeInfo, ShaderPushConstantInfo, ShaderStageInfo, ShaderType, ShaderVertexAttributeInfo}, vkcontext::VkContext, Renderer}};
+use lise::{math::vec2::Vec2UI, renderer::{self, frame_buffer::Framebuffer, render_pass::{RenderPass, RenderPassSubPassInfo}, shader::{Shader, ShaderDescriptorInfo, ShaderDescriptorSetInfo, ShaderDescriptorTypeInfo, ShaderPushConstantInfo, ShaderStageInfo, ShaderType, ShaderVertexAttributeInfo}, vkcontext::VkContext, Renderer}, utility::Clock};
 use simple_logger::SimpleLogger;
 use simple_window::{Window, WindowEvent};
 
@@ -135,16 +135,28 @@ fn main() {
         false,
     );
 
+    let mut clock = Clock::new();
+    let mut sum_time = 0u32;
+    let mut frame_sum = 0u32;
+
     log::debug!("Entering game loop.");
     let mut is_running = true;
 
     while is_running {
+        clock.reset();
+
         window.poll_messages(|event| {
             match event {
                 WindowEvent::Close => is_running = false,
                 _ => (),
             }
         });
+
+        if sum_time >= 1000000 {
+            log::debug!("It's been {} microseconds. {} frames have elapsed. FPS: {}", sum_time, frame_sum, frame_sum as f32 / (sum_time as f32 / 1000000f32));
+            sum_time = 0;
+            frame_sum = 0;
+        }
         
         renderer.prepare_frame();
 
@@ -153,6 +165,8 @@ fn main() {
         world_render_pass.end(renderer.get_current_command_buffer_handle());
 
         renderer.submit_frame();
+        sum_time += clock.elapsed() as u32;
+        frame_sum += 1;
     }
 
     unsafe {

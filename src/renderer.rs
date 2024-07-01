@@ -12,7 +12,7 @@ pub mod utility;
 pub mod vkcontext;
 
 use std::{mem::ManuallyDrop, slice};
-use ash::{vk, Device};
+use ash::vk;
 
 use swapchain::Swapchain;
 use vkcontext::VkContext;
