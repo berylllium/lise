@@ -2,7 +2,7 @@ use ash::vk;
 
 use crate::math::vec2::Vec2UI;
 
-use super::vkcontext::VkContext;
+use super::{command_buffer::CommandBuffer, vkcontext::VkContext};
 
 pub struct RenderPass<'c> {
     pub handle: vk::RenderPass,

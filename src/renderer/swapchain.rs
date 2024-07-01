@@ -6,23 +6,23 @@ use super::image::Image;
 use super::vkcontext::{VkContext, QueueFamilyIndices};
 use super::utility::create_image_view;
 
-pub struct Swapchain<'c> {
+pub struct Swapchain<'ctx> {
     pub out_of_date: bool,
 
     pub image_views: Vec<vk::ImageView>,
     pub images: Vec<vk::Image>,
-    pub depth_images: Option<Vec<Image<'c>>>,
+    pub depth_images: Option<Vec<Image<'ctx>>>,
 
     pub swapchain_properties: SwapchainProperties,
 
     pub handle: vk::SwapchainKHR,
 
-    vkcontext: &'c VkContext,
+    vkcontext: &'ctx VkContext,
 }
 
-impl<'c> Swapchain<'c> {
+impl<'ctx> Swapchain<'ctx> {
     pub fn new(
-        vkcontext: &'c VkContext,
+        vkcontext: &'ctx VkContext,
         queue_family_indices: QueueFamilyIndices,
         create_depth_attachments: bool,
     ) -> Self {
@@ -135,7 +135,7 @@ impl<'c> Swapchain<'c> {
     }
 }
 
-impl<'c> Swapchain<'c> {
+impl<'ctx> Swapchain<'ctx> {
     pub fn acquire_next_image_index(&mut self, image_available_semaphore: vk::Semaphore) -> Option<u32> {
         let result = unsafe {
             self.vkcontext.loaders.swapchain_device.acquire_next_image(
@@ -186,7 +186,7 @@ impl<'c> Swapchain<'c> {
     }
 }
 
-impl<'c> Drop for Swapchain<'c> {
+impl<'ctx> Drop for Swapchain<'ctx> {
     fn drop(&mut self) {
         // Free image views.
         for image_view in self.image_views.iter() {

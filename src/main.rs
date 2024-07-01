@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use ash::vk::{self, AttachmentDescription, SubpassDependency};
-use lise::{math::vec2::Vec2UI, renderer::{self, render_pass::{RenderPass, RenderPassSubPassInfo}, shader::{Shader, ShaderDescriptorInfo, ShaderDescriptorSetInfo, ShaderDescriptorTypeInfo, ShaderPushConstantInfo, ShaderStageInfo, ShaderType, ShaderVertexAttributeInfo}, vkcontext::VkContext, Renderer}};
+use lise::{math::vec2::Vec2UI, renderer::{self, frame_buffer::Framebuffer, render_pass::{RenderPass, RenderPassSubPassInfo}, shader::{Shader, ShaderDescriptorInfo, ShaderDescriptorSetInfo, ShaderDescriptorTypeInfo, ShaderPushConstantInfo, ShaderStageInfo, ShaderType, ShaderVertexAttributeInfo}, vkcontext::VkContext, Renderer}};
 use simple_logger::SimpleLogger;
 use simple_window::{Window, WindowEvent};
 
@@ -12,7 +12,7 @@ fn main() {
 
     let vkcontext = VkContext::new(&window);
 
-    let renderer = Renderer::new(&vkcontext);
+    let mut renderer = Renderer::new(&vkcontext);
 
     let world_render_pass = RenderPass::new(
         &vkcontext,
@@ -59,6 +59,13 @@ fn main() {
             }
         ]
     );
+
+    let framebuffers = (0..renderer.swapchain.image_views.len()).map(|i| {
+        let attachments = [renderer.swapchain.image_views[i]];
+
+        Framebuffer::new(&vkcontext, world_render_pass.handle, &attachments, renderer.get_render_area_size())
+    })
+    .collect::<Vec<_>>();
 
     let mesh_shader = Shader::new(
         &vkcontext,
@@ -130,6 +137,7 @@ fn main() {
 
     log::debug!("Entering game loop.");
     let mut is_running = true;
+
     while is_running {
         window.poll_messages(|event| {
             match event {
@@ -137,6 +145,18 @@ fn main() {
                 _ => (),
             }
         });
+        
+        renderer.prepare_frame();
+
+        world_render_pass.begin(renderer.get_current_command_buffer_handle(), framebuffers[renderer.current_image_index as usize].handle);
+
+        world_render_pass.end(renderer.get_current_command_buffer_handle());
+
+        renderer.submit_frame();
+    }
+
+    unsafe {
+        vkcontext.device.device_wait_idle().unwrap();
     }
 }
 

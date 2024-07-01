@@ -4,7 +4,7 @@ use ash::vk;
 
 use super::{command_buffer::CommandBuffer, pipeline::{Pipeline, PipelineStateInfo}, vkcontext::VkContext};
 
-pub struct Shader<'c> {
+pub struct Shader<'ctx> {
     pub name: String,
     pub minimum_uniform_alignment: u64,
     
@@ -12,14 +12,14 @@ pub struct Shader<'c> {
 
     pub descriptor_set_layouts: Vec<vk::DescriptorSetLayout>,
 
-    pub pipeline: Pipeline<'c>,
+    pub pipeline: Pipeline<'ctx>,
 
-    vkcontext: &'c VkContext,
+    vkcontext: &'ctx VkContext,
 }
 
-impl<'c> Shader<'c> {
+impl<'ctx> Shader<'ctx> {
     pub fn new(
-        vkcontext: &'c VkContext,
+        vkcontext: &'ctx VkContext,
         name: &str,
         render_pass: vk::RenderPass,
         subpass_index: u32,
@@ -132,13 +132,13 @@ impl<'c> Shader<'c> {
     }
 }
 
-impl<'c> Shader<'c> {
+impl<'ctx> Shader<'ctx> {
     pub fn bind(&self, command_buffer: &CommandBuffer) {
         self.pipeline.bind(command_buffer, vk::PipelineBindPoint::GRAPHICS);
     }
 }
 
-impl<'c> Drop for Shader<'c> {
+impl<'ctx> Drop for Shader<'ctx> {
     fn drop(&mut self) {
         unsafe {
             self.vkcontext.device.destroy_descriptor_pool(self.descriptor_pool, None);
@@ -157,15 +157,15 @@ struct ShaderAttribute {
 }
 
 
-struct ShaderStage<'c, 'a> {
+struct ShaderStage<'ctx, 'a> {
     module: vk::ShaderModule,
     shader_stage_create_info: vk::PipelineShaderStageCreateInfo<'a>,
     stage_entry_point_name: CString,
-    vkcontext: &'c VkContext,
+    vkcontext: &'ctx VkContext,
 }
 
-impl<'c, 'a> ShaderStage<'c, 'a> {
-    fn new<P: AsRef<std::path::Path>>(vkcontext: &'c VkContext, path: P, shader_stage: vk::ShaderStageFlags) -> Self {
+impl<'ctx, 'a> ShaderStage<'ctx, 'a> {
+    fn new<P: AsRef<std::path::Path>>(vkcontext: &'ctx VkContext, path: P, shader_stage: vk::ShaderStageFlags) -> Self {
         let compute_code = read_shader_from_file(path);
 
         let module = {
@@ -197,7 +197,7 @@ impl<'c, 'a> ShaderStage<'c, 'a> {
     }
 }
 
-impl<'c, 'a> Drop for ShaderStage<'c, 'a> {
+impl<'ctx, 'a> Drop for ShaderStage<'ctx, 'a> {
     fn drop(&mut self) {
         unsafe {
             self.vkcontext.device.destroy_shader_module(self.module, None);

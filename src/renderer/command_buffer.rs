@@ -3,14 +3,14 @@ use core::slice;
 use ash::vk;
 use super::vkcontext::VkContext;
 
-pub struct CommandBuffer<'c> {
+pub struct CommandBuffer<'ctx> {
     pub handle: vk::CommandBuffer,
     command_pool: vk::CommandPool,
-    vkcontext: &'c VkContext,
+    vkcontext: &'ctx VkContext,
 }
 
-impl<'c> CommandBuffer<'c> {
-    pub fn new(vkcontext: &'c VkContext, command_pool: vk::CommandPool, is_primary: bool) -> Self {
+impl<'ctx> CommandBuffer<'ctx> {
+    pub fn new(vkcontext: &'ctx VkContext, command_pool: vk::CommandPool, is_primary: bool) -> Self {
         let handle = {
             let allocate_info = vk::CommandBufferAllocateInfo::default()
                 .command_pool(command_pool)
@@ -28,7 +28,7 @@ impl<'c> CommandBuffer<'c> {
     }
 }
 
-impl<'c> CommandBuffer<'c> {
+impl<'ctx> CommandBuffer<'ctx> {
     pub fn begin(&self, is_single_use: bool, is_render_pass_continue: bool, is_simultaneous_use: bool) {
         let mut flags = vk::CommandBufferUsageFlags::default();
 
@@ -63,7 +63,7 @@ impl<'c> CommandBuffer<'c> {
     }
 }
 
-impl<'c> CommandBuffer<'c> {
+impl<'ctx> CommandBuffer<'ctx> {
     pub fn transition_image(
         &self,
         image: vk::Image,
@@ -105,7 +105,7 @@ impl<'c> CommandBuffer<'c> {
     }
 }
 
-impl<'c> Drop for CommandBuffer<'c> {
+impl<'ctx> Drop for CommandBuffer<'ctx> {
     fn drop(&mut self) {
         unsafe { self.vkcontext.device.free_command_buffers(self.command_pool, &[self.handle]) }
     }

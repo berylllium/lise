@@ -5,17 +5,17 @@ use ash::vk;
 
 use super::{command_buffer::CommandBuffer, utility, vkcontext::VkContext};
 
-pub struct Buffer<'c> {
+pub struct Buffer<'ctx> {
     pub handle: vk::Buffer,
     pub device_memory: vk::DeviceMemory,
     pub size: u64,
     pub is_locked: bool,
-    vkcontext: &'c VkContext,
+    vkcontext: &'ctx VkContext,
 }
 
-impl<'c> Buffer<'c> {
+impl<'ctx> Buffer<'ctx> {
     pub fn new(
-        vkcontext: &'c VkContext,
+        vkcontext: &'ctx VkContext,
         size: u64,
         buffer_usage_flags: vk::BufferUsageFlags,
         memory_property_flags: vk::MemoryPropertyFlags,
@@ -59,7 +59,7 @@ impl<'c> Buffer<'c> {
     }
 }
 
-impl<'c> Buffer<'c> {
+impl<'ctx> Buffer<'ctx> {
     pub fn bind(&self, offset: vk::DeviceSize) {
         unsafe {
             self.vkcontext.device.bind_buffer_memory(self.handle, self.device_memory, offset).unwrap();
@@ -115,7 +115,7 @@ impl<'c> Buffer<'c> {
     }
 }
 
-impl<'c> Buffer<'c> {
+impl<'ctx> Buffer<'ctx> {
     pub fn load_data<T: Copy>(&mut self, offset: vk::DeviceSize, value: &T, flags: vk::MemoryMapFlags) {
         let buffer_adr = self.lock_memory(offset, size_of::<T>() as vk::DeviceSize, flags);
 
@@ -125,7 +125,7 @@ impl<'c> Buffer<'c> {
     }
 }
 
-impl<'c> Drop for Buffer<'c> {
+impl<'ctx> Drop for Buffer<'ctx> {
     fn drop(&mut self) {
         unsafe {
             self.vkcontext.device.free_memory(self.device_memory, None);

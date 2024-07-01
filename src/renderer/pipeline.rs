@@ -1,15 +1,15 @@
 use ash::vk;
 use super::{command_buffer::CommandBuffer, vkcontext::VkContext};
 
-pub struct Pipeline<'c> {
+pub struct Pipeline<'ctx> {
     pub handle: vk::Pipeline,
     pub layout: vk::PipelineLayout,
-    vkcontext: &'c VkContext,
+    vkcontext: &'ctx VkContext,
 }
 
-impl<'c> Pipeline<'c> {
+impl<'ctx> Pipeline<'ctx> {
     pub fn new_graphics(
-        vkcontext: &'c VkContext,
+        vkcontext: &'ctx VkContext,
         render_pass: vk::RenderPass,
         subpass_index: u32,
         pipeline_state_info: &PipelineStateInfo,
@@ -85,7 +85,7 @@ impl<'c> Pipeline<'c> {
     }
 
     pub fn new_compute(
-        vkcontext: &'c VkContext,
+        vkcontext: &'ctx VkContext,
         descriptor_set_layouts: &[vk::DescriptorSetLayout],
         compute_stage_create_info: vk::PipelineShaderStageCreateInfo,
     ) -> Self {
@@ -121,7 +121,7 @@ impl<'c> Pipeline<'c> {
     }
 }
 
-impl<'c> Pipeline<'c> {
+impl<'ctx> Pipeline<'ctx> {
     pub const REQUIRED_DYNAMIC_STATE: [vk::DynamicState; 3] = [
         vk::DynamicState::VIEWPORT,
         vk::DynamicState::SCISSOR,
@@ -135,7 +135,7 @@ impl<'c> Pipeline<'c> {
     }
 }
 
-impl<'c> Drop for Pipeline<'c> {
+impl<'ctx> Drop for Pipeline<'ctx> {
     fn drop(&mut self) {
         unsafe {
             self.vkcontext.device.destroy_pipeline_layout(self.layout, None);

@@ -4,7 +4,7 @@ use crate::math::vec2::Vec2UI;
 
 use super::{utility, vkcontext::VkContext};
 
-pub struct Image<'c> {
+pub struct Image<'ctx> {
     pub handle: vk::Image,
     pub format: vk::Format,
     pub size: Vec2UI,
@@ -13,12 +13,12 @@ pub struct Image<'c> {
 
     pub image_view: Option<vk::ImageView>,
 
-    vkcontext: &'c VkContext,
+    vkcontext: &'ctx VkContext,
 }
 
-impl<'c> Image<'c> {
+impl<'ctx> Image<'ctx> {
     pub fn new(
-        vkcontext: &'c VkContext,
+        vkcontext: &'ctx VkContext,
         image_type: vk::ImageType,
         size: Vec2UI,
         format: vk::Format,
@@ -85,7 +85,7 @@ impl<'c> Image<'c> {
     }
 }
 
-impl<'c> Image<'c> {
+impl<'ctx> Image<'ctx> {
     pub fn transition_layout(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -176,7 +176,7 @@ impl<'c> Image<'c> {
     }
 }
 
-impl<'c> Drop for Image<'c> {
+impl<'ctx> Drop for Image<'ctx> {
     fn drop(&mut self) {
         unsafe {
             match self.image_view {
