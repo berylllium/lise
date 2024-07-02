@@ -2,7 +2,7 @@ use std::{ffi::CString, marker::PhantomData, ptr};
 
 use ash::vk;
 
-use super::{command_buffer::CommandBuffer, pipeline::{Pipeline, PipelineStateInfo}, vkcontext::VkContext};
+use super::{pipeline::{Pipeline, PipelineStateInfo}, vkcontext::VkContext};
 
 pub struct Shader<'ctx> {
     pub name: String,
@@ -133,7 +133,7 @@ impl<'ctx> Shader<'ctx> {
 }
 
 impl<'ctx> Shader<'ctx> {
-    pub fn bind(&self, command_buffer: &CommandBuffer) {
+    pub fn bind(&self, command_buffer: vk::CommandBuffer) {
         self.pipeline.bind(command_buffer, vk::PipelineBindPoint::GRAPHICS);
     }
 }
@@ -155,7 +155,6 @@ struct ShaderAttribute {
     format: vk::Format,
     size: u32,
 }
-
 
 struct ShaderStage<'ctx, 'a> {
     module: vk::ShaderModule,

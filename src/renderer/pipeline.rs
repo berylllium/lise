@@ -128,9 +128,9 @@ impl<'ctx> Pipeline<'ctx> {
         vk::DynamicState::LINE_WIDTH,
     ];
 
-    pub fn bind(&self, command_buffer: &CommandBuffer, bind_point: vk::PipelineBindPoint) {
+    pub fn bind(&self, command_buffer: vk::CommandBuffer, bind_point: vk::PipelineBindPoint) {
         unsafe {
-            self.vkcontext.device.cmd_bind_pipeline(command_buffer.handle, bind_point, self.handle);
+            self.vkcontext.device.cmd_bind_pipeline(command_buffer, bind_point, self.handle);
         }
     }
 }

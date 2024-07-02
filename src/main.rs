@@ -162,6 +162,8 @@ fn main() {
 
         world_render_pass.begin(renderer.get_current_command_buffer_handle(), framebuffers[renderer.current_image_index as usize].handle);
 
+        mesh_shader.bind(renderer.get_current_command_buffer_handle());
+
         world_render_pass.end(renderer.get_current_command_buffer_handle());
 
         renderer.submit_frame();

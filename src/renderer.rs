@@ -3,6 +3,7 @@ pub mod command_buffer;
 pub mod debug;
 pub mod frame_buffer;
 pub mod image;
+pub mod mesh;
 pub mod pipeline;
 pub mod render_pass;
 pub mod shader;
