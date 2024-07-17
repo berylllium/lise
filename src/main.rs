@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use ash::vk::{self, AttachmentDescription, SubpassDependency};
-use lise::{math::vec2::Vec2UI, renderer::{self, frame_buffer::Framebuffer, render_pass::{RenderPass, RenderPassSubPassInfo}, shader::{Shader, ShaderDescriptorInfo, ShaderDescriptorSetInfo, ShaderDescriptorTypeInfo, ShaderPushConstantInfo, ShaderStageInfo, ShaderType, ShaderVertexAttributeInfo}, vkcontext::VkContext, Renderer}, utility::Clock};
+use lise::{math::vec2::Vec2UI, node::Node, renderer::{self, frame_buffer::Framebuffer, render_pass::{RenderPass, RenderPassSubPassInfo}, shader::{Shader, ShaderDescriptorInfo, ShaderDescriptorSetInfo, ShaderDescriptorTypeInfo, ShaderPushConstantInfo, ShaderStageInfo, ShaderType, ShaderVertexAttributeInfo}, vkcontext::VkContext, Renderer}, utility::Clock};
 use simple_logger::SimpleLogger;
 use simple_window::{Window, WindowEvent};
 
@@ -135,6 +135,18 @@ fn main() {
         false,
     );
 
+    // Node testing.
+    let mut root = Node::new("Root", None);
+    root.add_child(Node::new("C1", None));
+    root.add_child(Node::new("C2", None));
+    root.add_child(Node::new("C3", None));
+
+    for node in root.iter() {
+        log::debug!("Node: {}", node.name);
+    }
+
+    // Loop.
+    
     let mut clock = Clock::new();
     let mut sum_time = 0u32;
     let mut frame_sum = 0u32;
@@ -146,9 +158,8 @@ fn main() {
         clock.reset();
 
         window.poll_messages(|event| {
-            match event {
-                WindowEvent::Close => is_running = false,
-                _ => (),
+            if let WindowEvent::Close = event {
+                is_running = false;
             }
         });
 

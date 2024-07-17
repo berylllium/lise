@@ -147,7 +147,7 @@ impl<'ctx> Buffer<'ctx> {
     ) {
         let flags = vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT;
 
-        let mut staging = Buffer::from_slice(
+        let staging = Buffer::from_slice(
             self.vkcontext,
             s,
             vk::BufferUsageFlags::TRANSFER_SRC,

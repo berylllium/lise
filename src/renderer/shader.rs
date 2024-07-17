@@ -181,7 +181,7 @@ impl<'ctx, 'a> ShaderStage<'ctx, 'a> {
             p_next: ptr::null(),
             flags: vk::PipelineShaderStageCreateFlags::default(),
             stage: shader_stage,
-            module: module,
+            module,
             p_name: entry_point_name.as_ptr(),
             p_specialization_info: ptr::null(),
             _marker: PhantomData,

@@ -1,5 +1,5 @@
 use ash::vk;
-use super::{command_buffer::CommandBuffer, vkcontext::VkContext};
+use super::vkcontext::VkContext;
 
 pub struct Pipeline<'ctx> {
     pub handle: vk::Pipeline,
