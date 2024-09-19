@@ -141,18 +141,17 @@ impl<'ctx> Renderer<'ctx> {
     pub fn submit_frame(&mut self) -> bool {
         let command_buffer = &self.command_buffers[self.current_frame as usize];
 
-        command_buffer.end(&self.vkcontext);
+        command_buffer.end(self.vkcontext);
 
         // Wait if a previous frame is still using this image.
-        match self.queue_complete_fences_image[self.current_image_index as usize] {
-            Some(fence) => unsafe {
+        if let Some(fence) = self.queue_complete_fences_image[self.current_image_index as usize] {
+            unsafe {
                 self.vkcontext.device.wait_for_fences(
                     slice::from_ref(&fence),
                     true,
                     u64::MAX
                 ).unwrap();
-            },
-            None => (),
+            }
         }
 
         // Mark fence as  being in use by this image.
@@ -207,7 +206,7 @@ impl<'ctx> Renderer<'ctx> {
 
         self.vkcontext.wait_gpu_idle();
 
-        let swapchain = Swapchain::new(&self.vkcontext, self.vkcontext.queue_family_indices, true);
+        let swapchain = Swapchain::new(self.vkcontext, self.vkcontext.queue_family_indices, true);
 
         self.swapchain = swapchain;
     }
