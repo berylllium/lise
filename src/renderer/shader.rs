@@ -2,6 +2,8 @@ use std::{ffi::CString, marker::PhantomData, ptr};
 
 use ash::vk;
 
+use crate::container::FreeList;
+
 use super::{pipeline::{Pipeline, PipelineStateInfo}, vkcontext::VkContext};
 
 pub struct Shader<'ctx> {
@@ -13,6 +15,8 @@ pub struct Shader<'ctx> {
     pub descriptor_set_layouts: Vec<vk::DescriptorSetLayout>,
 
     pub pipeline: Pipeline<'ctx>,
+
+    instances: FreeList<ShaderInstance>,
 
     vkcontext: &'ctx VkContext,
 }
@@ -136,6 +140,10 @@ impl<'ctx> Shader<'ctx> {
     pub fn bind(&self, command_buffer: vk::CommandBuffer) {
         self.pipeline.bind(command_buffer, vk::PipelineBindPoint::GRAPHICS);
     }
+
+    pub fn allocate_instance(&self) {
+
+    }
 }
 
 impl<'ctx> Drop for Shader<'ctx> {
@@ -159,7 +167,7 @@ struct ShaderAttribute {
 struct ShaderStage<'ctx, 'a> {
     module: vk::ShaderModule,
     shader_stage_create_info: vk::PipelineShaderStageCreateInfo<'a>,
-    stage_entry_point_name: CString,
+    _stage_entry_point_name: CString,
     vkcontext: &'ctx VkContext,
 }
 
@@ -190,7 +198,7 @@ impl<'ctx, 'a> ShaderStage<'ctx, 'a> {
         Self {
             module,
             shader_stage_create_info,
-            stage_entry_point_name: entry_point_name,
+            _stage_entry_point_name: entry_point_name,
             vkcontext,
         }
     }
@@ -297,4 +305,8 @@ fn read_shader_from_file<P: AsRef<std::path::Path>>(path: P) -> Vec<u32> {
     let mut cursor = fs::load(path);
 
     ash::util::read_spv(&mut cursor).unwrap()
+}
+
+struct ShaderInstance {
+    descriptor_sets: Vec<vk::DescriptorSet>,
 }

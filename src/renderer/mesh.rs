@@ -1,10 +1,10 @@
 use ash::vk;
 
-use crate::math::vec3::Vec3F;
+use crate::math::{vec2::Vec2F, vec3::Vec3F};
 
 use super::{buffer::Buffer, vkcontext::VkContext};
 
-struct Mesh<'ctx> {
+pub struct Mesh<'ctx> {
     vertices: Vec<Vertex>,
     indices: Vec<u32>,
 
@@ -55,8 +55,18 @@ impl<'ctx> Mesh<'ctx> {
 }
 
 #[derive(Clone, Copy)]
-struct Vertex {
-    position: Vec3F,
-    texture_coordinate: Vec3F,
-    normal: Vec3F,
+#[repr(C)]
+pub struct Vertex {
+    pub position: Vec3F,
+    pub texture_coordinate: Vec2F,
+    pub normal: Vec3F,
+}
+
+impl Vertex {
+    pub fn get_binding_description(binding: u32) -> vk::VertexInputBindingDescription {
+        vk::VertexInputBindingDescription::default()
+            .binding(binding)
+            .stride(size_of::<Vertex>() as u32)
+            .input_rate(vk::VertexInputRate::VERTEX)
+    }
 }

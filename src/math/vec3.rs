@@ -7,7 +7,7 @@ pub type Vec3F = Vec3<f32>;
 pub type Vec3I = Vec3<i32>;
 pub type Vec3UI = Vec3<u32>;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Vec3<T: Num> {
     pub x: T,
     pub y: T,

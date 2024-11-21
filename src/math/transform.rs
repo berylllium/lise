@@ -1,5 +1,6 @@
 use super::{mat4x4::Mat4x4, vec3::Vec3F};
 
+#[derive(Clone, Copy, Default)]
 pub struct Transform {
     pub translation: Vec3F,
     pub rotation: Vec3F,

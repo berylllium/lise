@@ -5,6 +5,7 @@ pub mod frame_buffer;
 pub mod image;
 pub mod mesh;
 pub mod pipeline;
+pub mod render_package;
 pub mod render_pass;
 pub mod shader;
 pub mod swapchain;
@@ -15,6 +16,7 @@ pub mod vkcontext;
 use std::{mem::ManuallyDrop, slice};
 use ash::vk;
 
+use mesh::Vertex;
 use swapchain::Swapchain;
 use vkcontext::VkContext;
 use command_buffer::CommandBuffer;
@@ -236,4 +238,11 @@ impl<'ctx> Drop for Renderer<'ctx> {
             device.destroy_command_pool(self.command_pool, None);
         }
     }
+}
+
+pub struct RenderPacket<'a> {
+    vertices: &'a [Vertex],
+    indices: &'a [i32],
+
+
 }

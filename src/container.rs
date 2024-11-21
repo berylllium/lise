@@ -1,7 +1,5 @@
 use std::{
-    mem,
-    ptr::{self, NonNull},
-    alloc::{self, Layout},
+    alloc::{self, Layout}, mem, ptr::{self, NonNull}
 };
 
 pub struct FreeList<T> {
@@ -66,18 +64,49 @@ impl<T> FreeList<T> {
 
         unsafe {
             ptr::write(self.data.as_ptr().add(insert_index), value);
-            ptr::write(self.free_indices.as_ptr().add(insert_index), true);
+            ptr::write(self.free_indices.as_ptr().add(insert_index), false);
         }
 
         insert_index
     }
 
-    pub fn as_slice(&self) -> &[T] {
-        unsafe { std::slice::from_raw_parts(self.data.as_ptr(), self.cap) }
+    pub fn at(&self, idx: usize) -> Option<&T> {
+        if self.cap > 0 && self.is_occupied(idx) {
+            unsafe { self.data.as_ptr().add(idx).as_ref() }
+        } else {
+            None
+        }
     }
 
-    pub fn as_slice_mut(&mut self) -> &mut [T] {
-        unsafe { std::slice::from_raw_parts_mut(self.data.as_ptr(), self.cap) }
+    pub fn at_mut(&mut self, idx: usize) -> Option<&mut T> {
+        if self.cap > 0 && self.is_occupied(idx) {
+            unsafe { self.data.as_ptr().add(idx).as_mut() }
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn is_free(&self, idx: usize) -> bool {
+        if idx >= self.cap { return false; }
+        unsafe { *self.free_indices.as_ptr().add(idx) }
+    }
+
+    #[inline]
+    pub fn is_occupied(&self, idx: usize) -> bool {
+        !self.is_free(idx)
+    }
+
+    /// # Safety
+    /// Indexing a free slot will result in UB.
+    pub unsafe fn as_slice(&self) -> &[T] {
+        std::slice::from_raw_parts(self.data.as_ptr(), self.cap)
+    }
+
+    /// # Safety
+    /// Indexing a free slot will result in UB.
+    pub unsafe fn as_slice_mut(&mut self) -> &mut [T] {
+        std::slice::from_raw_parts_mut(self.data.as_ptr(), self.cap)
     }
 }
 
@@ -130,16 +159,24 @@ impl<T> FreeList<T> {
         for i in self.cap..new_cap {
             unsafe { ptr::write(self.free_indices.as_ptr().add(i), true) };
         }
+
+        self.cap = new_cap;
     }
 
     fn find_empty_index(&self) -> Option<usize> {
         for i in 0..self.cap {
-            if unsafe { *self.free_indices.as_ptr().add(i) } {
+            if self.is_free(i) {
                 return Some(i);
             }
         }
 
         None
+    }
+}
+
+impl<T> Default for FreeList<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -1,7 +1,5 @@
-use std::mem::size_of;
-
 use ash::vk::{self, AttachmentDescription, SubpassDependency};
-use lise::{math::vec2::Vec2UI, node::Node, renderer::{self, frame_buffer::Framebuffer, render_pass::{RenderPass, RenderPassSubPassInfo}, shader::{Shader, ShaderDescriptorInfo, ShaderDescriptorSetInfo, ShaderDescriptorTypeInfo, ShaderPushConstantInfo, ShaderStageInfo, ShaderType, ShaderVertexAttributeInfo}, vkcontext::VkContext, Renderer}, utility::Clock};
+use lise::{math::vec2::Vec2UI, renderer::{self, frame_buffer::Framebuffer, mesh::Vertex, render_pass::{RenderPass, RenderPassSubPassInfo}, shader::{Shader, ShaderDescriptorInfo, ShaderDescriptorSetInfo, ShaderDescriptorTypeInfo, ShaderPushConstantInfo, ShaderStageInfo, ShaderType, ShaderVertexAttributeInfo}, vkcontext::VkContext, Renderer}, utility::Clock};
 use simple_logger::SimpleLogger;
 use simple_window::{Window, WindowEvent};
 
@@ -14,7 +12,7 @@ fn main() {
 
     let mut renderer = Renderer::new(&vkcontext);
 
-    let world_render_pass = RenderPass::new(
+    let ui_render_pass = RenderPass::new(
         &vkcontext,
         Vec2UI::default(),
         renderer.get_render_area_size(),
@@ -63,14 +61,14 @@ fn main() {
     let framebuffers = (0..renderer.swapchain.image_views.len()).map(|i| {
         let attachments = [renderer.swapchain.image_views[i]];
 
-        Framebuffer::new(&vkcontext, world_render_pass.handle, &attachments, renderer.get_render_area_size())
+        Framebuffer::new(&vkcontext, ui_render_pass.handle, &attachments, renderer.get_render_area_size())
     })
     .collect::<Vec<_>>();
 
-    let mesh_shader = Shader::new(
+    let ui_shader = Shader::new(
         &vkcontext,
         "LiSE Test",
-        world_render_pass.handle,
+        ui_render_pass.handle,
         0,
         &[
             vk::PipelineColorBlendAttachmentState {
@@ -88,24 +86,10 @@ fn main() {
         &[ Vertex::get_binding_description(0) ],
         &[
             ShaderVertexAttributeInfo { attribute_type: ShaderType::Float32_3, binding: 0 },
-            ShaderVertexAttributeInfo { attribute_type: ShaderType::Float32_3, binding: 0 },
             ShaderVertexAttributeInfo { attribute_type: ShaderType::Float32_2, binding: 0 },
         ],
+        &[],
         &[
-            ShaderPushConstantInfo { push_constant_type: ShaderType::Matrix4, stage_flags: vk::ShaderStageFlags::VERTEX },
-        ],
-        &[
-            ShaderDescriptorSetInfo {
-                max_set_allocations: 1 * renderer::MAX_FRAMES_IN_FLIGHT,
-                descriptors: &[
-                    ShaderDescriptorInfo {
-                        descriptor_type: ShaderDescriptorTypeInfo::UniformBuffer { 
-                            fields: &[ ShaderType::Matrix4, ShaderType::Matrix4 ],
-                        },
-                        stage_flags: vk::ShaderStageFlags::VERTEX,
-                    },
-                ]
-            },
             ShaderDescriptorSetInfo {
                 max_set_allocations: 1000 * renderer::MAX_FRAMES_IN_FLIGHT,
                 descriptors: &[
@@ -125,28 +109,19 @@ fn main() {
         &[
             ShaderStageInfo {
                 stage_type: vk::ShaderStageFlags::VERTEX,
-                stage_file: "shaders/builtin.meshshader.vert.spv",
+                stage_file: "shaders/builtin.uishader.vert.spv",
             },
             ShaderStageInfo {
                 stage_type: vk::ShaderStageFlags::FRAGMENT,
-                stage_file: "shaders/builtin.meshshader.frag.spv",
+                stage_file: "shaders/builtin.uishader.frag.spv",
             },
         ],
         false,
     );
 
-    // Node testing.
-    let mut root = Node::new("Root", None);
-    root.add_child(Node::new("C1", None));
-    root.add_child(Node::new("C2", None));
-    root.add_child(Node::new("C3", None));
-
-    for node in root.iter() {
-        log::debug!("Node: {}", node.name);
-    }
+    // Scene testing.
 
     // Loop.
-    
     let mut clock = Clock::new();
     let mut sum_time = 0u32;
     let mut frame_sum = 0u32;
@@ -171,11 +146,11 @@ fn main() {
         
         renderer.prepare_frame();
 
-        world_render_pass.begin(renderer.get_current_command_buffer_handle(), framebuffers[renderer.current_image_index as usize].handle);
+        ui_render_pass.begin(renderer.get_current_command_buffer_handle(), framebuffers[renderer.current_image_index as usize].handle);
 
-        mesh_shader.bind(renderer.get_current_command_buffer_handle());
+        ui_shader.bind(renderer.get_current_command_buffer_handle());
 
-        world_render_pass.end(renderer.get_current_command_buffer_handle());
+        ui_render_pass.end(renderer.get_current_command_buffer_handle());
 
         renderer.submit_frame();
         sum_time += clock.elapsed() as u32;
@@ -184,22 +159,5 @@ fn main() {
 
     unsafe {
         vkcontext.device.device_wait_idle().unwrap();
-    }
-}
-
-#[derive(Clone, Copy)]
-#[repr(C)]
-struct Vertex {
-    pos: [f32; 3],
-    color: [f32; 3],
-    uv: [f32; 2],
-}
-
-impl Vertex {
-    fn get_binding_description(binding: u32) -> vk::VertexInputBindingDescription {
-        vk::VertexInputBindingDescription::default()
-            .binding(binding)
-            .stride(size_of::<Vertex>() as u32)
-            .input_rate(vk::VertexInputRate::VERTEX)
     }
 }
